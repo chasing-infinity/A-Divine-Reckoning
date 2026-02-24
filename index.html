@@ -228,9 +228,13 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 </style>
 </head>
 <body>
-  <audio controls loop>
+ <audio id="bgMusic" loop>
   <source src="music.mp3" type="audio/mpeg">
 </audio>
+
+<button onclick="document.getElementById('bgMusic').play()">
+  Start Music
+</button>
 <div class="stars" id="stars"></div>
 
 <!-- ══════════════════════════ START ══════════════════════════ -->
