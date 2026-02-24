@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pantheon Rising</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Lato:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07060a;--bg-deep:#100d16;--bg-panel:#12101a;--bg-card:#0d0b14;--bg-domain:#111020;
+  --gold:#c9a84c;--gold-bright:#f0c040;--gold-dim:rgba(201,168,76,0.15);--gold-border:rgba(201,168,76,0.35);
+  --cream:#e8dfc0;--faith:#3ecf6a;--favor:#4a9eff;--wrath:#b44ce8;
+  --text:#e8dfc0;--text-dim:#8a7f6a;--radius:14px;--tr:300ms ease-in-out;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;overflow-x:hidden;}
+
+/* grain */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:200px;opacity:0.035;pointer-events:none;z-index:9999;}
+/* ambient glow */
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 55% at 50% -5%,rgba(201,168,76,0.11) 0%,transparent 60%),radial-gradient(ellipse 55% 45% at 8% 100%,rgba(180,76,232,0.08) 0%,transparent 60%),radial-gradient(ellipse 45% 35% at 92% 80%,rgba(62,207,106,0.04) 0%,transparent 55%),linear-gradient(175deg,var(--bg-deep) 0%,var(--bg) 55%,#080610 100%);pointer-events:none;z-index:0;}
+
+/* stars */
+.stars{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.star{position:absolute;border-radius:50%;opacity:0;animation:twinkle var(--dur,4s) var(--delay,0s) infinite;}
+@keyframes twinkle{0%,100%{opacity:0;}50%{opacity:var(--op,0.4);}}
+
+/* screens */
+.screen{display:none;position:relative;z-index:1;min-height:100vh;width:100%;align-items:center;justify-content:center;flex-direction:column;padding:2rem 1rem;}
+.screen.active{display:flex;animation:sF 0.5s cubic-bezier(.22,.61,.36,1);}
+@keyframes sF{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+
+/* ornament */
+.orn{display:flex;align-items:center;gap:1rem;width:100%;max-width:600px;justify-content:center;}
+.orn-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold-border),transparent);}
+.orn-diamond{width:6px;height:6px;background:var(--gold);transform:rotate(45deg);flex-shrink:0;}
+
+/* ═══════════════════ BUTTONS ═══════════════════ */
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:0.9rem 3rem;border:1px solid var(--gold-border);background:rgba(201,168,76,0.06);color:var(--gold);font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:0.28em;text-transform:uppercase;cursor:pointer;border-radius:var(--radius);transition:all var(--tr);position:relative;overflow:hidden;}
+.btn::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(240,192,64,0.13),transparent);opacity:0;transition:opacity var(--tr);}
+.btn:hover{transform:scale(1.05);border-color:var(--gold);box-shadow:0 0 35px rgba(201,168,76,0.28),0 0 70px rgba(201,168,76,0.08);color:var(--gold-bright);}
+.btn:hover::after{opacity:1;}
+.btn:active{transform:scale(0.98);}
+.btn:disabled{opacity:0.3;cursor:not-allowed;transform:none;box-shadow:none;}
+
+/* ═══════════════════ START ═══════════════════ */
+#screen-start{gap:1.8rem;text-align:center;}
+.main-title{font-family:'Cinzel',serif;font-size:clamp(3.5rem,11vw,8rem);font-weight:900;letter-spacing:0.05em;line-height:0.82;color:var(--cream);text-shadow:0 0 100px rgba(201,168,76,0.5),0 0 200px rgba(201,168,76,0.2),0 3px 8px rgba(0,0,0,0.95);}
+.eyebrow{font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.5em;color:var(--gold);text-transform:uppercase;opacity:0.7;}
+.lore{max-width:480px;font-size:0.88rem;line-height:1.9;color:var(--text-dim);font-weight:300;font-style:italic;}
+.win-box{background:linear-gradient(135deg,rgba(201,168,76,0.06),rgba(201,168,76,0.03));border:1px solid var(--gold-border);border-radius:var(--radius);padding:1.4rem 2rem;max-width:460px;width:100%;text-align:left;box-shadow:0 0 40px rgba(201,168,76,0.05);}
+.win-box-title{font-family:'Cinzel',serif;font-size:0.58rem;letter-spacing:0.38em;color:var(--gold);text-transform:uppercase;margin-bottom:1rem;text-align:center;}
+.win-row{display:flex;align-items:center;gap:0.8rem;margin-bottom:0.55rem;font-size:0.83rem;color:var(--text-dim);}
+.win-row:last-child{margin-bottom:0;}
+.wdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.wdot.f{background:var(--faith);box-shadow:0 0 10px var(--faith);}
+.wdot.v{background:var(--favor);box-shadow:0 0 10px var(--favor);}
+.wdot.w{background:var(--wrath);box-shadow:0 0 10px var(--wrath);}
+.start-actions{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;}
+
+/* ═══════════════════ NAME ═══════════════════ */
+#screen-name{gap:2rem;text-align:center;}
+.name-title{font-family:'Cinzel',serif;font-size:clamp(1.5rem,5vw,2.6rem);font-weight:700;color:var(--cream);letter-spacing:0.06em;}
+.name-sub{font-size:0.88rem;color:var(--text-dim);font-style:italic;}
+.name-input{width:100%;max-width:380px;padding:1.1rem 1.5rem;background:rgba(201,168,76,0.05);border:1px solid var(--gold-border);border-radius:var(--radius);color:var(--cream);font-family:'Cinzel',serif;font-size:1.1rem;letter-spacing:0.1em;text-align:center;outline:none;transition:all var(--tr);}
+.name-input::placeholder{color:var(--text-dim);opacity:0.5;font-size:0.88rem;}
+.name-input:focus{border-color:var(--gold);box-shadow:0 0 30px rgba(201,168,76,0.22),0 0 0 1px rgba(201,168,76,0.1);}
+
+/* ═══════════════════ DOMAIN ═══════════════════ */
+#screen-domain{gap:0;padding:3rem 1.5rem;}
+.domain-header{text-align:center;margin-bottom:2.5rem;display:flex;flex-direction:column;align-items:center;gap:1rem;}
+.domain-step{font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:0.55em;color:var(--gold);text-transform:uppercase;opacity:0.6;}
+.domain-title{font-family:'Cinzel',serif;font-size:clamp(2.2rem,7vw,4.8rem);font-weight:900;letter-spacing:0.07em;color:var(--cream);text-shadow:0 0 60px rgba(201,168,76,0.35);}
+.domain-lore{max-width:580px;font-size:0.88rem;line-height:1.85;color:var(--text-dim);font-style:italic;}
+.domain-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;width:100%;max-width:1120px;}
+@media(max-width:900px){.domain-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:540px){.domain-grid{grid-template-columns:1fr;}}
+.domain-card{background:var(--bg-domain);border:1px solid rgba(201,168,76,0.2);border-radius:var(--radius);padding:2rem 1.4rem 1.8rem;cursor:pointer;transition:all var(--tr);display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;overflow:hidden;}
+.domain-card::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(201,168,76,0.08) 0%,transparent 55%);opacity:0;transition:opacity var(--tr);}
+.domain-card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.7),transparent);opacity:0;transition:opacity var(--tr);}
+.domain-card:hover{border-color:var(--gold);transform:translateY(-6px);box-shadow:0 20px 60px rgba(0,0,0,0.7),0 0 50px rgba(201,168,76,0.14);}
+.domain-card:hover::before,.domain-card:hover::after{opacity:1;}
+.domain-card.selected{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 50px rgba(201,168,76,0.22);background:rgba(201,168,76,0.07);}
+.domain-card.selected::before,.domain-card.selected::after{opacity:1;}
+.domain-icon{width:64px;height:64px;margin-bottom:1.4rem;}
+.domain-icon svg{width:100%;height:100%;fill:none;stroke:var(--gold);stroke-width:1.4;opacity:0.88;}
+.domain-name{font-family:'Cinzel',serif;font-size:1rem;font-weight:700;letter-spacing:0.06em;color:var(--cream);margin-bottom:0.3rem;}
+.domain-sub{font-size:0.76rem;font-style:italic;color:var(--text-dim);margin-bottom:1rem;}
+.domain-bonus{font-size:0.66rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;margin-bottom:1.2rem;line-height:1.7;}
+.domain-bonus span{display:block;}
+.domain-ability-box{background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:0.9rem 1rem;width:100%;text-align:left;margin-top:auto;}
+.domain-ability-name{font-family:'Cinzel',serif;font-size:0.66rem;letter-spacing:0.16em;color:var(--cream);font-weight:700;margin-bottom:0.3rem;}
+.domain-ability-desc{font-size:0.73rem;color:var(--text-dim);line-height:1.65;}
+.domain-cta{margin-top:2rem;display:flex;flex-direction:column;align-items:center;gap:0.8rem;}
+.domain-selected-label{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.22em;color:var(--gold);opacity:0;transition:opacity 0.3s;min-height:1.2em;}
+.domain-selected-label.show{opacity:1;}
+
+/* ═══════════════════ GAME ═══════════════════ */
+#screen-game{flex-direction:column;gap:0;padding:1.4rem 1rem 3rem;align-items:center;}
+.game-topbar{width:100%;max-width:900px;display:flex;justify-content:space-between;align-items:center;margin-bottom:1.3rem;padding-bottom:0.9rem;border-bottom:1px solid var(--gold-dim);}
+.topbar-left{display:flex;flex-direction:column;gap:0.2rem;}
+.topbar-title{font-family:'Cinzel',serif;font-size:0.82rem;letter-spacing:0.28em;color:var(--gold);}
+.topbar-domain{font-size:0.66rem;letter-spacing:0.12em;color:var(--text-dim);font-style:italic;}
+.topbar-progress{font-size:0.7rem;color:var(--text-dim);letter-spacing:0.1em;}
+
+/* ability */
+.ability-banner{width:100%;max-width:900px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.18);border-radius:10px;padding:0.6rem 1.2rem;margin-bottom:1.1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+.ability-banner-text{font-size:0.73rem;color:var(--text-dim);}
+.ability-banner-text strong{color:var(--gold);font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.12em;}
+.ability-btn{padding:0.38rem 1.1rem;font-size:0.63rem;letter-spacing:0.2em;border-radius:8px;flex-shrink:0;}
+
+/* stats */
+.stats-area{width:100%;max-width:900px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.9rem;margin-bottom:1.3rem;}
+.stat-panel{background:var(--bg-panel);border:1px solid rgba(255,255,255,0.05);border-radius:var(--radius);padding:0.9rem 1rem 0.85rem;position:relative;overflow:hidden;transition:border-color 0.4s;}
+.stat-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0.8;}
+.stat-panel.sp-f::before{background:linear-gradient(90deg,transparent,var(--faith),transparent);}
+.stat-panel.sp-v::before{background:linear-gradient(90deg,transparent,var(--favor),transparent);}
+.stat-panel.sp-w::before{background:linear-gradient(90deg,transparent,var(--wrath),transparent);}
+.stat-panel.fl-f{border-color:rgba(62,207,106,0.5);}
+.stat-panel.fl-v{border-color:rgba(74,158,255,0.5);}
+.stat-panel.fl-w{border-color:rgba(180,76,232,0.5);}
+.stat-name{font-family:'Cinzel',serif;font-size:0.56rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.3rem;}
+.stat-val{font-family:'Cinzel',serif;font-size:1.8rem;font-weight:700;line-height:1;margin-bottom:0.5rem;transition:transform 0.15s;}
+.sv-f{color:var(--faith);text-shadow:0 0 25px rgba(62,207,106,0.5);}
+.sv-v{color:var(--favor);text-shadow:0 0 25px rgba(74,158,255,0.5);}
+.sv-w{color:var(--wrath);}
+.sv-w.danger{animation:wP 1.4s ease-in-out infinite;}
+@keyframes wP{0%,100%{text-shadow:0 0 20px rgba(180,76,232,0.5);}50%{text-shadow:0 0 45px rgba(180,76,232,1),0 0 70px rgba(180,76,232,0.5);}}
+.stat-val.pop{transform:scale(1.35);}
+.stat-track{height:4px;background:rgba(255,255,255,0.05);border-radius:99px;overflow:hidden;}
+.stat-fill{height:100%;border-radius:99px;transition:width 0.6s cubic-bezier(.22,.61,.36,1);}
+.sf-f{background:var(--faith);box-shadow:0 0 10px rgba(62,207,106,0.6);}
+.sf-v{background:var(--favor);box-shadow:0 0 10px rgba(74,158,255,0.6);}
+.sf-w{background:var(--wrath);}
+.sf-w.glow{box-shadow:0 0 18px rgba(180,76,232,0.9);}
+
+/* ─── SCENARIO LAYOUT ─── */
+.scenario-wrap{width:100%;max-width:900px;display:grid;grid-template-columns:280px 1fr;gap:0;margin-bottom:1.2rem;border:1px solid var(--gold-border);border-radius:var(--radius);overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,0.7),0 0 0 1px rgba(201,168,76,0.04),inset 0 1px 0 rgba(201,168,76,0.07);animation:cA 0.4s cubic-bezier(.22,.61,.36,1);}
+@keyframes cA{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+@media(max-width:700px){.scenario-wrap{grid-template-columns:1fr;}}
+
+/* illustration panel */
+.sc-illustration{background:var(--bg-card);position:relative;overflow:hidden;min-height:200px;display:flex;align-items:center;justify-content:center;}
+.sc-illustration svg{width:100%;height:100%;position:absolute;inset:0;}
+.sc-illustration::after{content:'';position:absolute;right:0;top:0;bottom:0;width:60px;background:linear-gradient(90deg,transparent,var(--bg-card));pointer-events:none;}
+@media(max-width:700px){.sc-illustration{min-height:180px;}.sc-illustration::after{display:none;}.sc-illustration::before{content:'';position:absolute;left:0;right:0;bottom:0;height:50px;background:linear-gradient(0deg,transparent,rgba(13,11,20,0.9));pointer-events:none;}}
+
+/* text panel */
+.sc-text-panel{background:var(--bg-card);padding:1.8rem 2rem 1.6rem;display:flex;flex-direction:column;justify-content:center;position:relative;}
+.sc-text-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.4),transparent);}
+.sc-tag{font-family:'Cinzel',serif;font-size:0.56rem;letter-spacing:0.42em;color:var(--gold);text-transform:uppercase;opacity:0.6;margin-bottom:0.75rem;}
+.sc-text{font-size:0.98rem;line-height:1.88;color:var(--cream);font-weight:300;}
+.sc-prompt{margin-top:0.8rem;font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.18em;color:var(--gold);opacity:0.5;}
+
+/* choices */
+.choices-wrap{width:100%;max-width:900px;}
+.layout-4{display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;}
+@media(max-width:540px){.layout-4{grid-template-columns:1fr;}}
+.choice-btn{background:var(--bg-panel);border:1px solid rgba(201,168,76,0.18);border-radius:var(--radius);padding:1.1rem 1.3rem;color:var(--cream);font-family:'Lato',sans-serif;font-size:0.85rem;line-height:1.62;cursor:pointer;text-align:left;transition:all var(--tr);position:relative;overflow:hidden;}
+.choice-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,168,76,0.1),transparent);opacity:0;transition:opacity var(--tr);}
+.choice-btn:hover{border-color:var(--gold);transform:translateY(-2px) scale(1.02);box-shadow:0 0 30px rgba(201,168,76,0.2),0 6px 24px rgba(0,0,0,0.5);}
+.choice-btn:hover::before{opacity:1;}
+.choice-btn:active{transform:scale(0.98);}
+.choice-btn.reveal-low{border-color:rgba(62,207,106,0.55);box-shadow:0 0 15px rgba(62,207,106,0.15);}
+.choice-btn.reveal-low::after{content:'Lowest Wrath';position:absolute;top:7px;right:10px;font-size:0.52rem;letter-spacing:0.14em;color:var(--faith);font-family:'Cinzel',serif;text-transform:uppercase;}
+.ch-label{display:block;font-family:'Cinzel',serif;font-size:0.52rem;letter-spacing:0.32em;color:var(--gold);text-transform:uppercase;margin-bottom:0.38rem;opacity:0.62;}
+
+/* alerts */
+.wrath-alert{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(180,76,232,0.13);border:1px solid rgba(180,76,232,0.5);border-radius:var(--radius);padding:0.7rem 1.8rem;font-size:0.78rem;letter-spacing:0.08em;color:#d07af0;opacity:0;transition:opacity 0.4s;pointer-events:none;z-index:1000;white-space:nowrap;box-shadow:0 0 30px rgba(180,76,232,0.15);}
+.wrath-alert.show{opacity:1;}
+.ability-flash{position:fixed;inset:0;background:rgba(201,168,76,0.04);pointer-events:none;z-index:500;opacity:0;transition:opacity 0.3s;}
+.ability-flash.show{opacity:1;}
+
+/* ═══════════════════ END SCREENS ═══════════════════ */
+.end-inner{max-width:640px;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.7rem;}
+.end-eyebrow{font-family:'Cinzel',serif;font-size:0.63rem;letter-spacing:0.45em;text-transform:uppercase;color:var(--gold);opacity:0.68;}
+.end-headline{font-family:'Cinzel',serif;font-size:clamp(2.3rem,7vw,4.5rem);font-weight:900;line-height:1.05;letter-spacing:0.04em;}
+.end-headline.victory{color:var(--gold-bright);text-shadow:0 0 70px rgba(240,192,64,0.55),0 0 140px rgba(240,192,64,0.2);}
+.end-headline.reject{color:var(--text-dim);}
+.end-headline.fail{color:#d07af0;text-shadow:0 0 70px rgba(180,76,232,0.5);}
+.end-quote{font-style:italic;font-size:0.95rem;color:var(--text-dim);line-height:1.85;max-width:440px;}
+.god-score-block{display:flex;flex-direction:column;align-items:center;gap:0.3rem;}
+.god-score-lbl{font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:0.38em;text-transform:uppercase;color:var(--text-dim);}
+.god-score-num{font-family:'Cinzel',serif;font-size:5.5rem;font-weight:900;line-height:1;color:var(--gold-bright);text-shadow:0 0 60px rgba(240,192,64,0.45);}
+.god-match-card{width:100%;background:linear-gradient(135deg,rgba(201,168,76,0.07),rgba(201,168,76,0.03));border:1px solid var(--gold-border);border-radius:var(--radius);padding:1.8rem 2rem;text-align:left;position:relative;overflow:hidden;display:flex;gap:1.6rem;align-items:center;}
+.god-match-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.55),transparent);}
+.god-portrait{width:96px;height:96px;flex-shrink:0;border-radius:50%;border:2px solid var(--gold-border);overflow:hidden;background:rgba(201,168,76,0.06);box-shadow:0 0 30px rgba(201,168,76,0.15);}
+.god-portrait svg{width:100%;height:100%;}
+.god-match-text{flex:1;}
+.gm-label{font-family:'Cinzel',serif;font-size:0.56rem;letter-spacing:0.35em;color:var(--gold);text-transform:uppercase;margin-bottom:0.5rem;opacity:0.68;}
+.gm-name{font-family:'Cinzel',serif;font-size:1.7rem;font-weight:700;color:var(--cream);margin-bottom:0.6rem;}
+.gm-desc{font-size:0.85rem;color:var(--text-dim);line-height:1.82;font-weight:300;}
+.final-stats-row{display:flex;gap:2.5rem;justify-content:center;}
+.fstat-val{font-family:'Cinzel',serif;font-size:1.7rem;font-weight:700;}
+.fstat-lbl{font-size:0.58rem;letter-spacing:0.28em;color:var(--text-dim);text-transform:uppercase;text-align:center;}
+.divider{width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--gold-dim),transparent);}
+.end-btns{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;}
+
+/* ═══════════════════ LEADERBOARD ═══════════════════ */
+#screen-leaderboard{padding:3rem 1rem;gap:0;align-items:center;}
+.lb-inner{width:100%;max-width:820px;display:flex;flex-direction:column;gap:2rem;}
+.lb-header{text-align:center;display:flex;flex-direction:column;align-items:center;gap:1rem;}
+.lb-title{font-family:'Cinzel',serif;font-size:clamp(2rem,6vw,3.8rem);font-weight:900;color:var(--gold-bright);letter-spacing:0.06em;text-shadow:0 0 60px rgba(240,192,64,0.45);}
+.lb-subtitle{font-size:0.82rem;color:var(--text-dim);font-style:italic;}
+.lb-table{display:flex;flex-direction:column;gap:0.65rem;}
+.lb-row{display:grid;grid-template-columns:2.8rem 1fr auto auto auto;align-items:center;gap:1rem;background:var(--bg-panel);border:1px solid rgba(201,168,76,0.1);border-radius:12px;padding:1rem 1.3rem;transition:all var(--tr);}
+.lb-row:hover{border-color:rgba(201,168,76,0.3);transform:translateX(3px);}
+.lb-row.rank-1{border-color:rgba(201,168,76,0.5);background:linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.03));}
+.lb-row.rank-2{border-color:rgba(192,192,192,0.3);background:rgba(192,192,192,0.03);}
+.lb-row.rank-3{border-color:rgba(205,127,50,0.3);background:rgba(205,127,50,0.03);}
+.lb-rank{font-family:'Cinzel',serif;font-size:1rem;font-weight:700;color:var(--text-dim);text-align:center;}
+.lb-row.rank-1 .lb-rank{color:var(--gold-bright);text-shadow:0 0 15px rgba(240,192,64,0.5);}
+.lb-row.rank-2 .lb-rank{color:#c0c0c0;}
+.lb-row.rank-3 .lb-rank{color:#cd7f32;}
+.lb-player{display:flex;align-items:center;gap:0.9rem;}
+.lb-avatar{width:40px;height:40px;border-radius:50%;border:1px solid var(--gold-border);overflow:hidden;flex-shrink:0;background:rgba(201,168,76,0.06);}
+.lb-avatar svg{width:100%;height:100%;}
+.lb-name{font-family:'Cinzel',serif;font-size:0.92rem;color:var(--cream);}
+.lb-god{font-size:0.7rem;color:var(--gold);font-style:italic;margin-top:0.1rem;}
+.lb-stat{text-align:center;}
+.lb-stat-val{font-family:'Cinzel',serif;font-size:0.9rem;font-weight:700;}
+.lb-stat-lbl{font-size:0.53rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--text-dim);}
+.lb-score-big{font-family:'Cinzel',serif;font-size:1.35rem;font-weight:900;color:var(--gold-bright);min-width:4rem;text-align:right;}
+.lb-empty{text-align:center;padding:3rem;color:var(--text-dim);font-style:italic;font-size:0.9rem;border:1px dashed rgba(201,168,76,0.15);border-radius:var(--radius);}
+.lb-actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;}
+.lb-clear{padding:0.7rem 2rem;font-size:0.7rem;letter-spacing:0.2em;border-color:rgba(180,76,232,0.35);color:#b44ce8;}
+.lb-clear:hover{border-color:#b44ce8;box-shadow:0 0 25px rgba(180,76,232,0.2);color:#d07af0;}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+
+<!-- ══════════════════════════ START ══════════════════════════ -->
+<div id="screen-start" class="screen active">
+  <div class="end-inner" style="gap:1.9rem">
+    <p class="eyebrow">A Divine Reckoning</p>
+    <h1 class="main-title">Pantheon<br>Rising</h1>
+    <div class="orn"><div class="orn-line"></div><div class="orn-diamond"></div><div class="orn-line"></div></div>
+    <p class="lore">Twelve mortal crises. Four choices each. Your judgment will shape the world — and reveal the god within you.</p>
+    <div class="win-box">
+      <div class="win-box-title">Conditions of Ascension</div>
+      <div class="win-row"><div class="wdot f"></div><span>Reach <strong style="color:var(--faith)">80 Faith</strong> — the people believe in you</span></div>
+      <div class="win-row"><div class="wdot v"></div><span>Reach <strong style="color:var(--favor)">40 Favor</strong> — Olympus respects your reign</span></div>
+      <div class="win-row"><div class="wdot w"></div><span>Keep <strong style="color:var(--wrath)">Wrath below 50</strong> — or be cast out forever</span></div>
+    </div>
+    <div class="start-actions">
+      <button class="btn" onclick="showScreen('screen-name')">Enter Your Name</button>
+      <button class="btn" onclick="showLeaderboard()">Hall of the Gods</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ NAME ══════════════════════════ -->
+<div id="screen-name" class="screen">
+  <div class="end-inner" style="gap:1.9rem">
+    <p class="eyebrow">Before You Ascend</p>
+    <h2 class="name-title">What name shall the mortals cry out?</h2>
+    <div class="orn"><div class="orn-line"></div><div class="orn-diamond"></div><div class="orn-line"></div></div>
+    <p class="name-sub">This name will echo through the halls of Olympus for eternity.</p>
+    <input class="name-input" id="name-input" type="text" maxlength="24" placeholder="Your divine name" autocomplete="off" oninput="onNameInput()" onkeydown="onNameKey(event)">
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;">
+      <button class="btn" style="padding:0.75rem 2rem;font-size:0.72rem;" onclick="showScreen('screen-start')">Back</button>
+      <button class="btn" id="name-confirm-btn" onclick="confirmName()" disabled>Choose Your Domain</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ DOMAIN ══════════════════════════ -->
+<div id="screen-domain" class="screen">
+  <div class="domain-header">
+    <p class="domain-step">Step 2 — Choose Your Domain</p>
+    <h2 class="domain-title">Pantheon Rising</h2>
+    <div class="orn" style="max-width:700px"><div class="orn-line"></div><div class="orn-diamond"></div><div class="orn-line"></div></div>
+    <p class="domain-lore">Your domain shapes your divine power, starting gifts, and the kind of stories mortals will tell of you for eternity.</p>
+  </div>
+  <div class="domain-grid">
+    <div class="domain-card" data-domain="wisdom" onclick="selectDomain(this)">
+      <div class="domain-icon"><svg viewBox="0 0 60 60"><polygon points="30,8 52,42 8,42"/><circle cx="30" cy="30" r="8"/><line x1="30" y1="8" x2="30" y2="22"/></svg></div>
+      <div class="domain-name">God of Wisdom</div><div class="domain-sub">Counsel &amp; Foresight</div>
+      <div class="domain-bonus"><span style="color:var(--favor)">+ Start: Favor +12</span></div>
+      <div class="domain-ability-box"><div class="domain-ability-name">Oracle's Eye:</div><div class="domain-ability-desc">Reveals which choice carries the least Wrath before you commit. Use once.</div></div>
+    </div>
+    <div class="domain-card" data-domain="valor" onclick="selectDomain(this)">
+      <div class="domain-icon"><svg viewBox="0 0 60 60"><polygon points="30,5 55,50 5,50"/><line x1="30" y1="5" x2="30" y2="50"/><line x1="17" y1="32" x2="43" y2="32"/></svg></div>
+      <div class="domain-name">God of Valor</div><div class="domain-sub">Courage &amp; War</div>
+      <div class="domain-bonus"><span style="color:var(--faith)">+ Start: Faith +12</span></div>
+      <div class="domain-ability-box"><div class="domain-ability-name">Battle Grace:</div><div class="domain-ability-desc">Doubles Faith gain from the next scenario you play. Use once.</div></div>
+    </div>
+    <div class="domain-card" data-domain="earth" onclick="selectDomain(this)">
+      <div class="domain-icon"><svg viewBox="0 0 60 60"><rect x="12" y="12" width="36" height="36" rx="3"/><line x1="30" y1="12" x2="30" y2="48"/><line x1="12" y1="30" x2="48" y2="30"/><circle cx="30" cy="30" r="5"/></svg></div>
+      <div class="domain-name">God of the Earth</div><div class="domain-sub">Growth &amp; Endurance</div>
+      <div class="domain-bonus"><span style="color:var(--wrath)">+ Wrath Grows 30% Slower</span></div>
+      <div class="domain-ability-box"><div class="domain-ability-name">Still Waters:</div><div class="domain-ability-desc">Purges 25 Wrath from your divine spirit immediately. Use once.</div></div>
+    </div>
+    <div class="domain-card" data-domain="sea" onclick="selectDomain(this)">
+      <div class="domain-icon"><svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="22"/><path d="M8,30 Q20,18 30,30 Q40,42 52,30"/><line x1="30" y1="8" x2="30" y2="52"/></svg></div>
+      <div class="domain-name">God of the Sea</div><div class="domain-sub">Tides &amp; Change</div>
+      <div class="domain-bonus"><span style="color:var(--faith)">+ Start: Faith +6</span><span style="color:var(--favor)">+ Start: Favor +6</span></div>
+      <div class="domain-ability-box"><div class="domain-ability-name">Shifting Tide:</div><div class="domain-ability-desc">Swap your current Wrath and Favor values. Use once.</div></div>
+    </div>
+  </div>
+  <div class="domain-cta">
+    <div class="domain-selected-label" id="domain-selected-label"></div>
+    <button class="btn" id="domain-confirm-btn" onclick="confirmDomain()" disabled>Ascend to Judgment</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════ GAME ══════════════════════════ -->
+<div id="screen-game" class="screen">
+  <div class="game-topbar">
+    <div class="topbar-left">
+      <span class="topbar-title">Pantheon Rising</span>
+      <span class="topbar-domain" id="topbar-domain">Domain of Wisdom</span>
+    </div>
+    <span class="topbar-progress" id="progress-text">Scenario 1 of 12</span>
+  </div>
+  <div class="ability-banner" id="ability-banner">
+    <div class="ability-banner-text"><strong id="ability-name">Oracle's Eye</strong> — <span id="ability-desc">Reveals which choice carries the least Wrath.</span></div>
+    <button class="btn ability-btn" id="ability-btn" onclick="useAbility()">Use Ability</button>
+  </div>
+  <div class="stats-area">
+    <div class="stat-panel sp-f" id="panel-faith"><div class="stat-name">Faith</div><div class="stat-val sv-f" id="val-faith">0</div><div class="stat-track"><div class="stat-fill sf-f" id="fill-faith" style="width:0%"></div></div></div>
+    <div class="stat-panel sp-v" id="panel-favor"><div class="stat-name">Favor</div><div class="stat-val sv-v" id="val-favor">0</div><div class="stat-track"><div class="stat-fill sf-v" id="fill-favor" style="width:0%"></div></div></div>
+    <div class="stat-panel sp-w" id="panel-wrath"><div class="stat-name">Wrath</div><div class="stat-val sv-w" id="val-wrath">0</div><div class="stat-track"><div class="stat-fill sf-w" id="fill-wrath" style="width:0%"></div></div></div>
+  </div>
+  <div class="scenario-wrap" id="scenario-wrap">
+    <div class="sc-illustration" id="sc-illustration"></div>
+    <div class="sc-text-panel">
+      <div class="sc-tag" id="sc-tag">Scenario I</div>
+      <p class="sc-text" id="sc-text"></p>
+      <p class="sc-prompt">What do you do?</p>
+    </div>
+  </div>
+  <div class="choices-wrap" id="choices-wrap"></div>
+</div>
+
+<!-- ══════════════════════════ FAIL ══════════════════════════ -->
+<div id="screen-fail" class="screen">
+  <div class="end-inner">
+    <div class="orn"><div class="orn-line"></div><div class="orn-diamond"></div><div class="orn-line"></div></div>
+    <p class="end-eyebrow">Wrath Consumed You</p>
+    <h2 class="end-headline fail">Olympus Turns Away</h2>
+    <div class="orn"><div class="orn-line"></div><div class="orn-diamond"></div><div class="orn-line"></div></div>
+    <p class="end-quote">"The mortals fear you. Olympus turns away."</p>
+    <p style="font-size:0.85rem;color:var(--text-dim);line-height:1.8;max-width:380px;">Your wrath outgrew your wisdom. The gates of Olympus closed. Even gods must know their limits.</p>
+    <div class="end-btns"><button class="btn" onclick="goToStart()">Try Again</button><button class="btn" onclick="showLeaderboard()">Leaderboard</button></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ WIN ══════════════════════════ -->
+<div id="screen-win" class="screen">
+  <div class="end-inner">
+    <div class="orn"><div class="orn-line"></div><div class="orn-diamond"></div><div class="orn-line"></div></div>
+    <p class="end-eyebrow">Olympus Accepts You</p>
+    <h2 class="end-headline victory">Ascended</h2>
+    <div class="orn"><div class="orn-line"></div><div class="orn-diamond"></div><div class="orn-line"></div></div>
+    <div class="god-score-block"><div class="god-score-lbl">God-Likeness</div><div class="god-score-num" id="win-score">0%</div></div>
+    <div class="final-stats-row">
+      <div><div class="fstat-val sv-f" id="end-faith">0</div><div class="fstat-lbl">Faith</div></div>
+      <div><div class="fstat-val sv-v" id="end-favor">0</div><div class="fstat-lbl">Favor</div></div>
+      <div><div class="fstat-val sv-w" id="end-wrath">0</div><div class="fstat-lbl">Wrath</div></div>
+    </div>
+    <div class="divider"></div>
+    <div class="god-match-card"><div class="god-portrait" id="win-portrait"></div><div class="god-match-text"><div class="gm-label">Your Divine Nature</div><div class="gm-name" id="win-god-name">—</div><div class="gm-desc" id="win-god-desc"></div></div></div>
+    <div class="end-btns"><button class="btn" onclick="goToStart()">Play Again</button><button class="btn" onclick="showLeaderboard()">Leaderboard</button></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ REJECT ══════════════════════════ -->
+<div id="screen-reject" class="screen">
+  <div class="end-inner">
+    <div class="orn"><div class="orn-line"></div><div class="orn-diamond"></div><div class="orn-line"></div></div>
+    <p class="end-eyebrow">Not Yet Worthy</p>
+    <h2 class="end-headline reject">The Gates Stay Closed</h2>
+    <div class="orn"><div class="orn-line"></div><div class="orn-diamond"></div><div class="orn-line"></div></div>
+    <div class="god-score-block"><div class="god-score-lbl">God-Likeness</div><div class="god-score-num" id="reject-score" style="color:var(--text-dim)">0%</div></div>
+    <p class="end-quote">Your deeds were not enough. Olympus demands greater proof of divinity before you may ascend.</p>
+    <div class="god-match-card"><div class="god-portrait" id="reject-portrait"></div><div class="god-match-text"><div class="gm-label">Your Divine Nature</div><div class="gm-name" id="reject-god-name">—</div><div class="gm-desc" id="reject-god-desc"></div></div></div>
+    <div class="end-btns"><button class="btn" onclick="goToStart()">Try Again</button><button class="btn" onclick="showLeaderboard()">Leaderboard</button></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ LEADERBOARD ══════════════════════════ -->
+<div id="screen-leaderboard" class="screen">
+  <div class="lb-inner">
+    <div class="lb-header">
+      <div class="orn" style="max-width:700px"><div class="orn-line"></div><div class="orn-diamond"></div><div class="orn-line"></div></div>
+      <h2 class="lb-title">Hall of the Gods</h2>
+      <p class="lb-subtitle">Those who have stood before Olympus and been judged</p>
+      <div class="orn" style="max-width:700px"><div class="orn-line"></div><div class="orn-diamond"></div><div class="orn-line"></div></div>
+    </div>
+    <div class="lb-table" id="lb-table"></div>
+    <div class="lb-actions">
+      <button class="btn" onclick="goToStart()">Play Again</button>
+      <button class="btn lb-clear" onclick="clearLeaderboard()">Clear Board</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrath-alert" id="wrath-alert">Wrath is rising — Olympus grows uneasy</div>
+<div class="ability-flash" id="ability-flash"></div>
+
+<script>
+// ═══════════════════════════════════════
+// STARS
+// ═══════════════════════════════════════
+(function(){
+  var c=document.getElementById('stars');
+  var sizes=[1,1,1,2,2,3];
+  for(var i=0;i<100;i++){
+    var s=document.createElement('div');s.className='star';
+    var sz=sizes[Math.floor(Math.random()*sizes.length)];
+    s.style.width=sz+'px';s.style.height=sz+'px';
+    s.style.left=Math.random()*100+'%';s.style.top=Math.random()*100+'%';
+    s.style.setProperty('--dur',(3+Math.random()*6)+'s');
+    s.style.setProperty('--delay',(Math.random()*8)+'s');
+    s.style.setProperty('--op',(0.15+Math.random()*0.5).toFixed(2));
+    c.appendChild(s);
+  }
+})();
+
+// ═══════════════════════════════════════
+// SCENE ILLUSTRATIONS (12 unique SVGs)
+// ═══════════════════════════════════════
+var sceneIllustrations=[
+
+  // 1 — Dying crops
+  '<svg viewBox="0 0 280 220" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="220" fill="#0a0814"/><rect x="0" y="150" width="280" height="70" fill="#1a1008"/><ellipse cx="140" cy="148" rx="140" ry="15" fill="#120e06" opacity="0.6"/><line x1="30" y1="150" x2="30" y2="100" stroke="#4a3010" stroke-width="2"/><line x1="30" y1="110" x2="18" y2="98" stroke="#4a3010" stroke-width="1.5"/><line x1="30" y1="115" x2="42" y2="102" stroke="#4a3010" stroke-width="1.5"/><line x1="30" y1="105" x2="20" y2="95" stroke="#3a2808" stroke-width="1.5"/><line x1="60" y1="150" x2="60" y2="95" stroke="#4a3010" stroke-width="2"/><line x1="60" y1="105" x2="48" y2="93" stroke="#3a2808" stroke-width="1.5"/><line x1="60" y1="110" x2="72" y2="97" stroke="#4a3010" stroke-width="1.5"/><line x1="90" y1="150" x2="90" y2="98" stroke="#4a3010" stroke-width="2"/><line x1="90" y1="108" x2="78" y2="96" stroke="#3a2808" stroke-width="1.5"/><line x1="90" y1="112" x2="102" y2="100" stroke="#4a3010" stroke-width="1.5"/><line x1="120" y1="150" x2="120" y2="100" stroke="#3a2808" stroke-width="2"/><line x1="120" y1="108" x2="108" y2="96" stroke="#3a2808" stroke-width="1.5"/><line x1="150" y1="150" x2="150" y2="96" stroke="#4a3010" stroke-width="2"/><line x1="150" y1="108" x2="162" y2="95" stroke="#4a3010" stroke-width="1.5"/><ellipse cx="220" cy="95" rx="30" ry="25" fill="#1e0a02" opacity="0.7"/><circle cx="220" cy="70" r="28" fill="#c97020" opacity="0.85"/><circle cx="220" cy="70" r="22" fill="#e08020" opacity="0.9"/><circle cx="220" cy="70" r="15" fill="#f0a030" opacity="0.85"/><line x1="220" y1="42" x2="220" y2="30" stroke="#f0a030" stroke-width="2"/><line x1="232" y1="46" x2="240" y2="36" stroke="#f0a030" stroke-width="2"/><line x1="198" y1="58" x2="188" y2="52" stroke="#f0a030" stroke-width="2"/><text x="50" y="185" font-family="serif" font-size="11" fill="#8a5a20" opacity="0.7">No harvest. No hope.</text><circle cx="80" cy="165" r="3" fill="#3a2808"/><circle cx="110" cy="162" r="2" fill="#3a2808"/><circle cx="50" cy="168" r="2.5" fill="#3a2808"/></svg>',
+
+  // 2 — Flood / coastal city
+  '<svg viewBox="0 0 280 220" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="220" fill="#080c18"/><rect x="0" y="0" width="280" height="100" fill="#0a1020"/><circle cx="240" cy="35" r="18" fill="#c0c8e0" opacity="0.15"/><circle cx="240" cy="35" r="12" fill="#d0d8f0" opacity="0.2"/><rect x="60" y="85" width="20" height="65" fill="#1a1830"/><rect x="90" y="70" width="25" height="80" fill="#1e1c38"/><rect x="125" y="80" width="18" height="70" fill="#1a1830"/><rect x="153" y="65" width="30" height="85" fill="#201e40"/><rect x="80" y="62" width="9" height="10" fill="#c9a84c" opacity="0.5"/><rect x="130" y="72" width="7" height="9" fill="#c9a84c" opacity="0.4"/><rect x="158" y="57" width="8" height="10" fill="#c9a84c" opacity="0.5"/><rect x="172" y="72" width="8" height="9" fill="#c9a84c" opacity="0.35"/><path d="M0,130 Q30,118 60,128 Q90,138 120,125 Q150,112 180,124 Q210,136 240,122 Q260,115 280,120 L280,220 L0,220Z" fill="#0a2060" opacity="0.95"/><path d="M0,148 Q35,136 70,146 Q105,156 140,143 Q175,130 210,143 Q245,156 280,144 L280,220 L0,220Z" fill="#0c2878" opacity="0.9"/><path d="M0,162 Q40,152 80,162 Q120,172 160,160 Q200,148 240,162 Q260,169 280,162 L280,220 L0,220Z" fill="#102890" opacity="0.85"/><path d="M0,178 Q50,170 100,178 Q150,186 200,175 Q240,167 280,176 L280,220 L0,220Z" fill="#152aa0" opacity="0.8"/><circle cx="60" cy="105" r="5" fill="#c9a84c" opacity="0.6"/><circle cx="62" cy="103" r="2" fill="#f0c040"/><text x="20" y="210" font-family="serif" font-size="10" fill="#4a6aff" opacity="0.6">The tide will not stop.</text></svg>',
+
+  // 3 — War between towns
+  '<svg viewBox="0 0 280 220" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="220" fill="#0e0808"/><rect x="0" y="155" width="280" height="65" fill="#1a0c08"/><circle cx="60" cy="80" r="35" fill="#200808" opacity="0.8"/><circle cx="220" cy="80" r="35" fill="#080820" opacity="0.8"/><line x1="80" y1="100" x2="135" y2="115" stroke="#8a2010" stroke-width="2.5"/><line x1="80" y1="100" x2="82" y2="90" stroke="#8a2010" stroke-width="1.5"/><line x1="80" y1="100" x2="72" y2="93" stroke="#c9a84c" stroke-width="1"/><line x1="200" y1="100" x2="145" y2="115" stroke="#1020a0" stroke-width="2.5"/><line x1="200" y1="100" x2="198" y2="90" stroke="#1020a0" stroke-width="1.5"/><line x1="200" y1="100" x2="208" y2="93" stroke="#c9a84c" stroke-width="1"/><ellipse cx="140" cy="118" rx="8" ry="4" fill="#c9a84c" opacity="0.6"/><line x1="140" y1="114" x2="140" y2="95" stroke="#c9a84c" stroke-width="1.5"/><circle cx="55" cy="65" r="10" fill="#1a0808"/><circle cx="53" cy="62" r="6" fill="#2a1010"/><circle cx="225" cy="65" r="10" fill="#08081a"/><circle cx="227" cy="62" r="6" fill="#10102a"/><polygon points="50,150 58,130 66,150" fill="#8a2010" opacity="0.6"/><polygon points="214,150 222,130 230,150" fill="#1020a0" opacity="0.6"/><line x1="140" y1="50" x2="140" y2="155" stroke="#c9a84c" stroke-width="0.5" stroke-dasharray="4,4" opacity="0.3"/><circle cx="112" cy="135" r="3" fill="#c9a84c" opacity="0.4"/><circle cx="168" cy="140" r="3" fill="#c9a84c" opacity="0.3"/><text x="100" y="210" font-family="serif" font-size="10" fill="#8a4020" opacity="0.7">Both sides call your name.</text></svg>',
+
+  // 4 — Dishonest leader
+  '<svg viewBox="0 0 280 220" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="220" fill="#0a0c10"/><rect x="60" y="60" width="160" height="120" fill="#12101e" rx="4"/><rect x="60" y="60" width="160" height="12" fill="#1e1a30" rx="2"/><rect x="70" y="80" width="60" height="40" fill="#0e0c18" rx="2"/><rect x="150" y="80" width="60" height="40" fill="#0e0c18" rx="2"/><rect x="110" y="130" width="60" height="40" fill="#0e0c18" rx="2"/><circle cx="140" cy="45" r="14" fill="#1e1a30"/><circle cx="140" cy="42" r="9" fill="#c9a84c" opacity="0.7"/><rect x="133" y="35" width="14" height="5" fill="#c9a84c" opacity="0.5"/><circle cx="100" cy="100" r="8" fill="#2a2040"/><circle cx="100" cy="98" r="5" fill="#1e1830"/><circle cx="180" cy="100" r="8" fill="#2a2040"/><circle cx="180" cy="98" r="5" fill="#1e1830"/><circle cx="140" cy="150" r="8" fill="#2a2040"/><circle cx="140" cy="148" r="5" fill="#1e1830"/><path d="M108,100 Q124,120 140,148" stroke="#c9a84c" stroke-width="1" fill="none" stroke-dasharray="3,3" opacity="0.5"/><path d="M172,100 Q156,120 140,148" stroke="#c9a84c" stroke-width="1" fill="none" stroke-dasharray="3,3" opacity="0.5"/><circle cx="200" cy="85" r="6" fill="#f0c040" opacity="0.8"/><circle cx="210" cy="95" r="4" fill="#f0c040" opacity="0.6"/><circle cx="195" cy="98" r="3" fill="#f0c040" opacity="0.5"/><text x="75" y="210" font-family="serif" font-size="10" fill="#6a5a80" opacity="0.7">The gold flows only one way.</text></svg>',
+
+  // 5 — Child praying
+  '<svg viewBox="0 0 280 220" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="220" fill="#080810"/><rect x="0" y="160" width="280" height="60" fill="#100e20"/><rect x="100" y="40" width="80" height="130" fill="#1a1830" rx="4"/><rect x="110" y="30" width="60" height="16" fill="#201e38" rx="2"/><polygon points="110,30 140,10 170,30" fill="#1a1830"/><circle cx="140" cy="22" r="5" fill="#c9a84c" opacity="0.7"/><rect x="125" y="55" width="14" height="20" fill="#0e0c18" rx="1"/><rect x="141" y="55" width="14" height="20" fill="#0e0c18" rx="1"/><rect x="125" y="80" width="14" height="20" fill="#0e0c18" rx="1"/><rect x="141" y="80" width="14" height="20" fill="#0e0c18" rx="1"/><circle cx="60" cy="155" r="8" fill="#2a2040"/><ellipse cx="60" cy="165" rx="12" ry="6" fill="#2a2040"/><line x1="56" y1="155" x2="52" y2="148" stroke="#2a2040" stroke-width="3" stroke-linecap="round"/><line x1="64" y1="155" x2="68" y2="148" stroke="#2a2040" stroke-width="3" stroke-linecap="round"/><line x1="52" y1="148" x2="54" y2="142" stroke="#2a2040" stroke-width="2.5" stroke-linecap="round"/><line x1="68" y1="148" x2="66" y2="142" stroke="#2a2040" stroke-width="2.5" stroke-linecap="round"/><line x1="54" y1="142" x2="66" y2="142" stroke="#2a2040" stroke-width="2" stroke-linecap="round"/><circle cx="60" cy="145" r="4" fill="#1e1830"/><radialGradient id="gl" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#f0c040" stop-opacity="0.5"/><stop offset="100%" stop-color="#f0c040" stop-opacity="0"/></radialGradient><ellipse cx="60" cy="148" rx="20" ry="12" fill="url(#gl)"/><line x1="62" y1="140" x2="75" y2="125" stroke="#f0c040" stroke-width="0.8" stroke-dasharray="2,3" opacity="0.5"/><line x1="60" y1="138" x2="70" y2="120" stroke="#f0c040" stroke-width="0.8" stroke-dasharray="2,3" opacity="0.4"/><text x="70" y="210" font-family="serif" font-size="10" fill="#6a5aaa" opacity="0.7">Sixty nights of prayer.</text></svg>',
+
+  // 6 — Drought
+  '<svg viewBox="0 0 280 220" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="220" fill="#0e0a04"/><rect x="0" y="150" width="280" height="70" fill="#1a1006"/><circle cx="220" cy="55" r="35" fill="#c87010" opacity="0.9"/><circle cx="220" cy="55" r="28" fill="#e09030" opacity="0.8"/><circle cx="220" cy="55" r="20" fill="#f0a840" opacity="0.7"/><line x1="220" y1="17" x2="220" y2="8" stroke="#e09030" stroke-width="2"/><line x1="237" y1="22" x2="244" y2="15" stroke="#e09030" stroke-width="2"/><line x1="244" y1="38" x2="253" y2="34" stroke="#e09030" stroke-width="2"/><line x1="203" y1="22" x2="196" y2="15" stroke="#e09030" stroke-width="2"/><path d="M20,150 Q60,145 100,150 Q140,155 180,148" stroke="#3a2808" stroke-width="2" fill="none"/><path d="M0,158 Q50,153 100,158 Q150,163 200,156 Q240,151 280,156" stroke="#2a1e04" stroke-width="1.5" fill="none" opacity="0.6"/><line x1="50" y1="150" x2="50" y2="120" stroke="#5a3808" stroke-width="1.5"/><line x1="50" y1="128" x2="40" y2="120" stroke="#4a2e06" stroke-width="1.2"/><line x1="50" y1="132" x2="60" y2="122" stroke="#4a2e06" stroke-width="1.2"/><line x1="90" y1="150" x2="90" y2="122" stroke="#5a3808" stroke-width="1.5"/><line x1="90" y1="130" x2="80" y2="122" stroke="#4a2e06" stroke-width="1.2"/><path d="M110,155 Q120,140 115,130 Q110,120 120,115" stroke="#3a2808" stroke-width="2" fill="none"/><circle cx="55" cy="165" r="4" fill="#2a1804"/><circle cx="95" cy="162" r="3" fill="#2a1804"/><circle cx="75" cy="168" r="2.5" fill="#2a1804"/><text x="20" y="210" font-family="serif" font-size="10" fill="#7a5018" opacity="0.7">The earth remembers no rain.</text></svg>',
+
+  // 7 — Temple greed
+  '<svg viewBox="0 0 280 220" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="220" fill="#08080e"/><rect x="70" y="100" width="140" height="90" fill="#14121e"/><rect x="60" y="92" width="160" height="14" fill="#1e1c30"/><rect x="50" y="80" width="180" height="16" fill="#201e38"/><polygon points="80,80 140,40 200,80" fill="#1a1830"/><circle cx="140" cy="55" r="6" fill="#c9a84c" opacity="0.8"/><rect x="80" y="106" width="12" height="20" fill="#0e0c16" rx="1"/><rect x="104" y="106" width="12" height="20" fill="#0e0c16" rx="1"/><rect x="128" y="106" width="24" height="50" fill="#12101c" rx="1"/><rect x="164" y="106" width="12" height="20" fill="#0e0c16" rx="1"/><rect x="188" y="106" width="12" height="20" fill="#0e0c16" rx="1"/><circle cx="210" cy="130" r="7" fill="#f0c040" opacity="0.9"/><circle cx="222" cy="122" r="5" fill="#f0c040" opacity="0.8"/><circle cx="218" cy="138" r="4" fill="#e0b030" opacity="0.7"/><circle cx="228" cy="134" r="3" fill="#f0c040" opacity="0.6"/><circle cx="50" cy="145" r="4" fill="#3a3050" opacity="0.7"/><circle cx="62" cy="150" r="3" fill="#3a3050" opacity="0.5"/><path d="M55,149 Q70,142 80,145" stroke="#c9a84c" stroke-width="1" fill="none" stroke-dasharray="2,3" opacity="0.4"/><line x1="140" y1="156" x2="140" y2="185" stroke="#3a3060" stroke-width="2"/><rect x="125" y="185" width="30" height="5" fill="#2a2850" rx="1"/><text x="70" y="215" font-family="serif" font-size="10" fill="#7a6a30" opacity="0.7">The gold never reaches the altar.</text></svg>',
+
+  // 8 — Soldier at night
+  '<svg viewBox="0 0 280 220" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="220" fill="#05080e"/><rect x="0" y="160" width="280" height="60" fill="#0a0e18"/><circle cx="230" cy="35" r="18" fill="#d0d8f0" opacity="0.12"/><circle cx="230" cy="35" r="13" fill="#d8e0ff" opacity="0.16"/><path d="M0,160 Q70,150 140,160 Q210,170 280,158" stroke="#1a2030" stroke-width="1" fill="none"/><circle cx="100" cy="140" r="5" fill="#2a2840"/><ellipse cx="100" cy="150" rx="14" ry="7" fill="#2a2840"/><line x1="96" y1="140" x2="90" y2="130" stroke="#2a2840" stroke-width="4" stroke-linecap="round"/><line x1="104" y1="140" x2="110" y2="130" stroke="#2a2840" stroke-width="4" stroke-linecap="round"/><line x1="96" y1="152" x2="92" y2="162" stroke="#2a2840" stroke-width="3" stroke-linecap="round"/><line x1="104" y1="152" x2="108" y2="162" stroke="#2a2840" stroke-width="3" stroke-linecap="round"/><ellipse cx="100" cy="128" rx="8" ry="9" fill="#252240"/><circle cx="100" cy="124" r="6" fill="#201e38"/><line x1="110" y1="130" x2="126" y2="112" stroke="#4a4860" stroke-width="3" stroke-linecap="round"/><line x1="124" y1="108" x2="128" y2="116" stroke="#4a4860" stroke-width="2"/><line x1="124" y1="108" x2="120" y2="113" stroke="#4a4860" stroke-width="2"/><line x1="100" y1="116" x2="95" y2="105" stroke="#c9a84c" stroke-width="0.8" stroke-dasharray="2,3" opacity="0.5"/><line x1="103" y1="118" x2="112" y2="105" stroke="#c9a84c" stroke-width="0.8" stroke-dasharray="2,3" opacity="0.4"/><circle cx="40" cy="155" r="2" fill="#c9a84c" opacity="0.3"/><circle cx="180" cy="150" r="1.5" fill="#c9a84c" opacity="0.2"/><text x="140" y="210" font-family="serif" font-size="10" fill="#4a5878" opacity="0.7">He prays only to return home.</text></svg>',
+
+  // 9 — Plague city
+  '<svg viewBox="0 0 280 220" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="220" fill="#080c08"/><rect x="0" y="150" width="280" height="70" fill="#0c1008"/><rect x="30" y="100" width="25" height="55" fill="#101a10"/><rect x="65" y="85" width="30" height="70" fill="#0e1a0e"/><rect x="105" y="95" width="22" height="60" fill="#101808"/><rect x="137" y="75" width="35" height="80" fill="#0e1a0e"/><rect x="182" y="90" width="28" height="65" fill="#101808"/><rect x="220" y="100" width="22" height="55" fill="#0e1a0e"/><circle cx="42" cy="90" r="4" fill="#3ecf6a" opacity="0.12"/><circle cx="80" cy="75" r="4" fill="#3ecf6a" opacity="0.1"/><circle cx="154" cy="65" r="5" fill="#3ecf6a" opacity="0.08"/><circle cx="196" cy="80" r="4" fill="#3ecf6a" opacity="0.1"/><path d="M0,165 Q70,158 140,165 Q210,172 280,163" stroke="#1a2a1a" stroke-width="1.5" fill="none"/><circle cx="55" cy="158" r="5" fill="#203020" opacity="0.8"/><ellipse cx="55" cy="166" rx="9" ry="4" fill="#1a2818"/><circle cx="55" cy="154" r="3" fill="#182818"/><circle cx="160" cy="155" r="5" fill="#203020" opacity="0.8"/><ellipse cx="160" cy="163" rx="9" ry="4" fill="#1a2818"/><circle cx="160" cy="151" r="3" fill="#182818"/><path d="M30,120 Q50,110 70,118 Q90,126 110,115" stroke="#3ecf6a" stroke-width="0.7" fill="none" opacity="0.15" stroke-dasharray="3,4"/><path d="M140,105 Q170,95 200,105 Q230,115 260,103" stroke="#3ecf6a" stroke-width="0.7" fill="none" opacity="0.12" stroke-dasharray="3,4"/><text x="45" y="210" font-family="serif" font-size="10" fill="#3a6a3a" opacity="0.6">The sickness moves with the ships.</text></svg>',
+
+  // 10 — Hungry thief / storehouse
+  '<svg viewBox="0 0 280 220" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="220" fill="#09080e"/><rect x="0" y="155" width="280" height="65" fill="#12100e"/><rect x="140" y="80" width="100" height="90" fill="#1a1820"/><rect x="140" y="72" width="100" height="12" fill="#201e2a"/><rect x="180" y="72" width="20" height="8" fill="#2a2838" rx="2"/><rect x="150" y="95" width="18" height="22" fill="#14121c" rx="1"/><rect x="178" y="95" width="18" height="22" fill="#14121c" rx="1"/><rect x="206" y="95" width="18" height="22" fill="#14121c" rx="1"/><circle cx="220" cy="145" r="8" fill="#c9a84c" opacity="0.7"/><circle cx="232" cy="138" r="6" fill="#c9a84c" opacity="0.55"/><circle cx="215" cy="137" r="4" fill="#e0b030" opacity="0.6"/><circle cx="80" cy="145" r="8" fill="#2a2840"/><ellipse cx="80" cy="158" rx="14" ry="6" fill="#242038"/><line x1="76" y1="145" x2="68" y2="133" stroke="#2a2840" stroke-width="4" stroke-linecap="round"/><line x1="84" y1="145" x2="95" y2="133" stroke="#2a2840" stroke-width="4" stroke-linecap="round"/><line x1="95" y1="133" x2="120" y2="130" stroke="#2a2840" stroke-width="3" stroke-linecap="round"/><circle cx="120" cy="128" r="5" fill="#1a1830"/><circle cx="80" cy="136" r="6" fill="#201e38"/><circle cx="36" cy="158" r="4" fill="#1e1c30"/><circle cx="44" cy="160" r="3" fill="#1e1c30"/><circle cx="52" cy="156" r="3.5" fill="#1e1c30"/><text x="30" y="210" font-family="serif" font-size="10" fill="#5a5070" opacity="0.7">He only wanted to feed his children.</text></svg>',
+
+  // 11 — Cruel king on throne
+  '<svg viewBox="0 0 280 220" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="220" fill="#080608"/><rect x="0" y="160" width="280" height="60" fill="#100e10"/><rect x="100" y="90" width="80" height="90" fill="#140e18" rx="2"/><rect x="90" y="80" width="100" height="16" fill="#1e1828" rx="2"/><polygon points="90,80 100,60 115,80" fill="#201a2a"/><polygon points="140,80 140,55 155,75" fill="#201a2a"/><polygon points="190,80 180,60 165,80" fill="#201a2a"/><circle cx="100" cy="60" r="5" fill="#c9a84c" opacity="0.7"/><circle cx="140" cy="54" r="5" fill="#c9a84c" opacity="0.8"/><circle cx="180" cy="60" r="5" fill="#c9a84c" opacity="0.7"/><circle cx="140" cy="118" r="11" fill="#1a1428"/><ellipse cx="140" cy="130" rx="18" ry="8" fill="#1a1428"/><line x1="129" y1="118" x2="118" y2="112" stroke="#1a1428" stroke-width="5" stroke-linecap="round"/><line x1="151" y1="118" x2="162" y2="112" stroke="#1a1428" stroke-width="5" stroke-linecap="round"/><rect x="162" y="106" width="30" height="8" fill="#2a2040" rx="2"/><rect x="88" y="106" width="30" height="8" fill="#2a2040" rx="2"/><circle cx="40" cy="168" r="5" fill="#1e1c30" opacity="0.7"/><ellipse cx="40" cy="176" rx="9" ry="4" fill="#1c1a2e"/><circle cx="65" cy="165" r="5" fill="#1e1c30" opacity="0.7"/><ellipse cx="65" cy="173" rx="9" ry="4" fill="#1c1a2e"/><circle cx="220" cy="168" r="5" fill="#1e1c30" opacity="0.6"/><text x="55" y="215" font-family="serif" font-size="10" fill="#5a4870" opacity="0.7">Thirty years of fear.</text></svg>',
+
+  // 12 — Wildfire
+  '<svg viewBox="0 0 280 220" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="220" fill="#0e0604"/><rect x="0" y="155" width="280" height="65" fill="#1a0e06"/><rect x="160" y="105" width="35" height="65" fill="#1e1008" rx="2"/><rect x="202" y="120" width="28" height="50" fill="#1a0e06" rx="2"/><rect x="235" y="110" width="30" height="60" fill="#1e1008" rx="2"/><path d="M0,200 Q70,190 140,200 Q210,210 280,198" fill="#1a0e06"/><path d="M30,155 Q35,130 28,115 Q42,125 38,105 Q50,120 45,100 Q58,118 52,98 Q65,115 58,90" stroke="#c94010" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M30,155 Q35,130 28,115 Q42,125 38,105 Q50,120 45,100 Q58,118 52,98 Q65,115 58,90" stroke="#e06020" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"/><path d="M55,155 Q60,128 54,112 Q66,122 63,100 Q74,118 70,96 Q82,114 76,88" stroke="#c93818" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M55,155 Q60,128 54,112 Q66,122 63,100 Q74,118 70,96 Q82,114 76,88" stroke="#f07030" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.6"/><path d="M80,155 Q85,132 80,118 Q90,130 87,110 Q98,126 93,104" stroke="#c94010" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="30" cy="150" r="12" fill="#c94010" opacity="0.15"/><circle cx="60" cy="148" r="10" fill="#e06020" opacity="0.12"/><circle cx="85" cy="145" r="8" fill="#c94010" opacity="0.1"/><path d="M100,155 Q200,140 280,155" stroke="#e07020" stroke-width="1" fill="none" opacity="0.3"/><text x="140" y="215" font-family="serif" font-size="10" fill="#8a4010" opacity="0.7">The fire does not wait.</text></svg>'
+];
+
+// ═══════════════════════════════════════
+// GOD SVG PORTRAITS
+// ═══════════════════════════════════════
+var godSVGs={
+  athena:'<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#0e0c15"/><ellipse cx="50" cy="62" rx="22" ry="18" fill="#2a2050"/><ellipse cx="50" cy="40" rx="16" ry="18" fill="#c9a84c" opacity="0.9"/><ellipse cx="50" cy="38" rx="11" ry="13" fill="#e8c88a"/><circle cx="44" cy="36" r="2.5" fill="#1a1030"/><circle cx="56" cy="36" r="2.5" fill="#1a1030"/><circle cx="44.8" cy="35.3" r="0.9" fill="#fff"/><circle cx="56.8" cy="35.3" r="0.9" fill="#fff"/><path d="M46,42 Q50,45 54,42" stroke="#a0704a" stroke-width="1.2" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="30" rx="13" ry="5" fill="#c9a84c"/><polygon points="38,25 50,10 62,25 56,25 50,14 44,25" fill="#f0c040"/><line x1="38" y1="25" x2="62" y2="25" stroke="#c9a84c" stroke-width="1.5"/><path d="M33,42 Q28,48 30,55" stroke="#e8c88a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M67,42 Q72,48 70,55" stroke="#e8c88a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="78" rx="14" ry="8" fill="#3a306a"/></svg>',
+  hera:'<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#0e0c15"/><ellipse cx="50" cy="63" rx="23" ry="17" fill="#2d1a40"/><ellipse cx="50" cy="40" rx="16" ry="18" fill="#c9a84c" opacity="0.85"/><ellipse cx="50" cy="38" rx="11" ry="13" fill="#f0d0a0"/><circle cx="44" cy="36" r="2.5" fill="#1a1030"/><circle cx="56" cy="36" r="2.5" fill="#1a1030"/><circle cx="44.8" cy="35.2" r="0.9" fill="#fff"/><circle cx="56.8" cy="35.2" r="0.9" fill="#fff"/><path d="M46,42 Q50,46 54,42" stroke="#9a6040" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M35,28 Q38,15 50,18 Q62,15 65,28 Q62,32 50,30 Q38,32 35,28Z" fill="#8a5a9a"/><path d="M42,18 Q44,12 50,13 Q56,12 58,18" stroke="#f0c040" stroke-width="1.5" fill="none"/><circle cx="50" cy="12" r="3" fill="#f0c040"/><path d="M32,42 Q27,48 29,56" stroke="#f0d0a0" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M68,42 Q73,48 71,56" stroke="#f0d0a0" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="78" rx="15" ry="7" fill="#4a2860"/></svg>',
+  zeus:'<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#0e0c15"/><ellipse cx="50" cy="64" rx="24" ry="16" fill="#1e2a40"/><ellipse cx="50" cy="40" rx="17" ry="19" fill="#c9a84c" opacity="0.8"/><ellipse cx="50" cy="38" rx="12" ry="14" fill="#e0c090"/><circle cx="43" cy="36" r="2.8" fill="#0d1520"/><circle cx="57" cy="36" r="2.8" fill="#0d1520"/><circle cx="43.8" cy="35.1" r="1" fill="#fff"/><circle cx="57.8" cy="35.1" r="1" fill="#fff"/><path d="M46,43 Q50,47 54,43" stroke="#8a6030" stroke-width="1.3" fill="none" stroke-linecap="round"/><path d="M36,30 Q38,22 50,22 Q62,22 64,30" fill="#d0d0d0" stroke="none"/><path d="M38,48 Q34,44 32,40 L28,42 L36,52Z" fill="#f0c040" opacity="0.9"/><path d="M32,42 Q27,50 30,58" stroke="#e0c090" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M68,42 Q73,50 70,58" stroke="#e0c090" stroke-width="3.5" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="78" rx="16" ry="7" fill="#203050"/></svg>',
+  demeter:'<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#0e0c15"/><ellipse cx="50" cy="63" rx="22" ry="17" fill="#1a2f1a"/><ellipse cx="50" cy="40" rx="16" ry="18" fill="#c9a84c" opacity="0.85"/><ellipse cx="50" cy="38" rx="11" ry="13" fill="#f0d5a0"/><circle cx="44" cy="36" r="2.5" fill="#1a2a10"/><circle cx="56" cy="36" r="2.5" fill="#1a2a10"/><circle cx="44.8" cy="35.3" r="0.9" fill="#fff"/><circle cx="56.8" cy="35.3" r="0.9" fill="#fff"/><path d="M46,42 Q50,46 54,42" stroke="#8a6030" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M35,30 Q40,18 50,20 Q60,18 65,30" fill="#4a7a20" stroke="none"/><circle cx="40" cy="19" r="4" fill="#e8c840"/><circle cx="50" cy="16" r="4" fill="#e8c840"/><circle cx="60" cy="19" r="4" fill="#e8c840"/><path d="M32,42 Q27,48 30,56" stroke="#f0d5a0" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M68,42 Q73,48 70,56" stroke="#f0d5a0" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="78" rx="14" ry="7" fill="#2a4a1a"/></svg>',
+  ares:'<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#0e0c15"/><ellipse cx="50" cy="64" rx="24" ry="16" fill="#2a0f0f"/><ellipse cx="50" cy="40" rx="17" ry="19" fill="#c9a84c" opacity="0.8"/><ellipse cx="50" cy="38" rx="12" ry="14" fill="#d0a070"/><circle cx="43" cy="35" r="2.8" fill="#200505"/><circle cx="57" cy="35" r="2.8" fill="#200505"/><circle cx="43.8" cy="34.1" r="1" fill="#fff"/><circle cx="57.8" cy="34.1" r="1" fill="#fff"/><path d="M45,43 Q50,46 55,43" stroke="#8a4020" stroke-width="1.4" fill="none" stroke-linecap="round"/><path d="M36,28 L38,16 L50,20 L62,16 L64,28 Q60,34 50,32 Q40,34 36,28Z" fill="#8a1010"/><line x1="38" y1="16" x2="62" y2="16" stroke="#c9a84c" stroke-width="1.5"/><path d="M30,42 Q24,50 28,58" stroke="#d0a070" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M70,42 Q76,50 72,58" stroke="#d0a070" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M72,46 L80,38 L78,44 L86,40 L78,52Z" fill="#c9a84c" opacity="0.8"/><ellipse cx="50" cy="78" rx="16" ry="7" fill="#3a1010"/></svg>',
+  apollo:'<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#0e0c15"/><ellipse cx="50" cy="63" rx="22" ry="17" fill="#1a1a30"/><ellipse cx="50" cy="40" rx="16" ry="18" fill="#c9a84c" opacity="0.9"/><ellipse cx="50" cy="38" rx="11" ry="13" fill="#ffe0b0"/><circle cx="44" cy="36" r="2.5" fill="#101025"/><circle cx="56" cy="36" r="2.5" fill="#101025"/><circle cx="44.8" cy="35.2" r="0.9" fill="#fff"/><circle cx="56.8" cy="35.2" r="0.9" fill="#fff"/><path d="M46,42 Q50,46 54,42" stroke="#a07030" stroke-width="1.2" fill="none" stroke-linecap="round"/><circle cx="50" cy="20" r="10" fill="#f0c040" opacity="0.25"/><circle cx="50" cy="20" r="6" fill="#f0c040" opacity="0.6"/><line x1="50" y1="10" x2="50" y2="6" stroke="#f0c040" stroke-width="1.5"/><line x1="58" y1="12" x2="61" y2="9" stroke="#f0c040" stroke-width="1.5"/><line x1="42" y1="12" x2="39" y2="9" stroke="#f0c040" stroke-width="1.5"/><line x1="62" y1="20" x2="66" y2="20" stroke="#f0c040" stroke-width="1.5"/><line x1="38" y1="20" x2="34" y2="20" stroke="#f0c040" stroke-width="1.5"/><path d="M32,42 Q27,48 30,56" stroke="#ffe0b0" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M68,42 Q73,48 70,56" stroke="#ffe0b0" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="78" rx="14" ry="7" fill="#252535"/></svg>'
+};
+
+// ═══════════════════════════════════════
+// GOD PROFILES
+// ═══════════════════════════════════════
+var godProfiles={
+  athena:{name:"Athena",desc:"You chose wisdom over force. Every decision was thought through carefully. The mortals trust your judgment, and Olympus values your mind above all."},
+  hera:{name:"Hera",desc:"You stood for order, loyalty, and protection. You kept the realm stable. People followed your rules because they knew you were fair."},
+  zeus:{name:"Zeus",desc:"You ruled with authority and strength. You made hard calls without hesitation. Some may have feared you, but none could ignore your power."},
+  demeter:{name:"Demeter",desc:"You showed deep care for the mortal world. You fed the hungry and helped the weak. The land and its people flourished under your watch."},
+  ares:{name:"Ares",desc:"You met every challenge with force. You never backed down. Your path left marks on the world, though not all of them were gentle."},
+  apollo:{name:"Apollo",desc:"You sought balance in all things. You healed, you guided, and you gave hope. The mortals looked to you as a light in times of darkness."}
+};
+
+// ═══════════════════════════════════════
+// DOMAINS
+// ═══════════════════════════════════════
+var domains={
+  wisdom:{name:"Domain of Wisdom",startFaith:0,startFavor:12,startWrath:0,wrathMult:1,abilityName:"Oracle's Eye",abilityDesc:"Reveals which choice carries the least Wrath before you commit.",abilityType:"oracle"},
+  valor:{name:"Domain of Valor",startFaith:12,startFavor:0,startWrath:0,wrathMult:1,abilityName:"Battle Grace",abilityDesc:"Doubles Faith gain from the next scenario you play.",abilityType:"valor"},
+  earth:{name:"Domain of the Earth",startFaith:0,startFavor:0,startWrath:0,wrathMult:0.7,abilityName:"Still Waters",abilityDesc:"Purges 25 Wrath from your divine spirit immediately.",abilityType:"purge"},
+  sea:{name:"Domain of the Sea",startFaith:6,startFavor:6,startWrath:0,wrathMult:1,abilityName:"Shifting Tide",abilityDesc:"Swap your current Wrath and Favor values.",abilityType:"swap"}
+};
+
+// ═══════════════════════════════════════
+// SCENARIOS  (best option positions: 3,1,4,2,3,1,4,2,1,3,2,4)
+// ═══════════════════════════════════════
+var scenarios=[
+  {text:"The crops are dying across three villages. Families have nothing to eat. Prayers fill the air day and night.",choices:[
+    {text:"Restore only the largest village. One strong community can help the rest recover.",faith:5,favor:2,wrath:5,tag:"zeus"},
+    {text:"Send just enough rain to keep them alive, but hold back a full harvest until they prove their faith.",faith:2,favor:0,wrath:8,tag:"hera"},
+    {text:"Send rain to all three villages and restore the soil for a full season.",faith:15,favor:5,wrath:-5,tag:"demeter"},
+    {text:"Let the people go hungry for one week first. Suffering sharpens devotion.",faith:-8,favor:0,wrath:12,tag:"ares"}
+  ]},
+  {text:"A flood is coming toward a city by the sea. The water will arrive by morning. People are asleep.",choices:[
+    {text:"Wake every person in the city with a divine voice and guide them all to safe ground.",faith:15,favor:5,wrath:-5,tag:"demeter"},
+    {text:"Warn only the city leader. If he acts fast, the people may survive. If not, that is his failing.",faith:3,favor:1,wrath:7,tag:"zeus"},
+    {text:"Let the flood come. The city was built in a foolish place. Loss is the best teacher.",faith:-8,favor:0,wrath:14,tag:"ares"},
+    {text:"Stop the flood, but only after letting the water reach the gates. Show them how close it came.",faith:8,favor:1,wrath:6,tag:"zeus"}
+  ]},
+  {text:"Two towns have been fighting for a month over a patch of land near a river. Both sides say you are on their side.",choices:[
+    {text:"Pick the town that prays more often. Reward devotion with victory.",faith:6,favor:2,wrath:6,tag:"zeus"},
+    {text:"Let the war continue. Conflict builds strength, and the stronger town will earn the land.",faith:-6,favor:0,wrath:12,tag:"ares"},
+    {text:"Take the land for yourself. Neither side has earned it through this behavior.",faith:-2,favor:0,wrath:10,tag:"zeus"},
+    {text:"Appear to both towns at once and force them to share the land equally.",faith:15,favor:5,wrath:-5,tag:"athena"}
+  ]},
+  {text:"A city leader has been lying to the people for years. He takes their money and spends it on himself. The people do not know yet.",choices:[
+    {text:"Expose him publicly in the most humiliating way possible. Let everyone see his shame.",faith:4,favor:1,wrath:10,tag:"zeus"},
+    {text:"Show every person in the city the truth in a dream tonight.",faith:15,favor:5,wrath:-5,tag:"athena"},
+    {text:"Do nothing. Mortals must discover their own corruption without divine help.",faith:-3,favor:0,wrath:8,tag:"apollo"},
+    {text:"Tell the leader privately that you know. Give him one chance to pay back what he stole.",faith:8,favor:2,wrath:2,tag:"hera"}
+  ]},
+  {text:"A child has prayed to you every single night for sixty days. She asks only that her sick mother be healed.",choices:[
+    {text:"Ease the mother's pain but do not cure her. Let the child learn that prayer is not a transaction.",faith:4,favor:1,wrath:4,tag:"hera"},
+    {text:"Heal the mother but take away the child's voice so she cannot tell others and create expectations.",faith:7,favor:0,wrath:10,tag:"zeus"},
+    {text:"Heal the mother fully tonight. The child's faith has been pure and persistent.",faith:15,favor:5,wrath:-5,tag:"apollo"},
+    {text:"Ignore the prayer. Responding to one child sets a precedent you cannot sustain across all mortals.",faith:-5,favor:0,wrath:10,tag:"ares"}
+  ]},
+  {text:"A drought has lasted two seasons. Wells are empty. Three towns share a single river that is almost dry.",choices:[
+    {text:"Fill every well and restore the river to full flow for the whole region.",faith:15,favor:5,wrath:-5,tag:"demeter"},
+    {text:"Send rain only after the three towns come together and hold a joint ceremony in your name.",faith:5,favor:1,wrath:8,tag:"zeus"},
+    {text:"Point them quietly toward an underground spring. Let them discover it and think it was luck.",faith:4,favor:2,wrath:5,tag:"hera"},
+    {text:"Refill only the shared river. Let the towns sort out the rest among themselves.",faith:8,favor:3,wrath:2,tag:"athena"}
+  ]},
+  {text:"The head priest of your largest temple has been selling prayers. He charges the poor twice what he charges the rich.",choices:[
+    {text:"Appear to him in a vision and give him seven days to correct his ways before you intervene.",faith:6,favor:2,wrath:3,tag:"apollo"},
+    {text:"Destroy the temple entirely. A house built on corruption should not stand.",faith:2,favor:0,wrath:14,tag:"zeus"},
+    {text:"Raise the price for the rich even further and funnel the extra to the poor without anyone knowing.",faith:9,favor:3,wrath:3,tag:"demeter"},
+    {text:"Remove him at once and open the temple free and equal to every person.",faith:15,favor:5,wrath:-5,tag:"hera"}
+  ]},
+  {text:"A soldier prays the night before a battle. He is afraid. He does not ask for victory — only to survive and return to his children.",choices:[
+    {text:"Keep him alive only if his side wins. Survival without victory teaches the wrong lesson.",faith:2,favor:0,wrath:10,tag:"zeus"},
+    {text:"Shield him through the battle and guide him safely home to his family.",faith:15,favor:5,wrath:-5,tag:"apollo"},
+    {text:"Make him witness the very worst of the battle before saving him. He will value peace more deeply.",faith:4,favor:1,wrath:8,tag:"ares"},
+    {text:"Give him courage and strength but leave his survival entirely to the battle and his own skill.",faith:8,favor:3,wrath:0,tag:"athena"}
+  ]},
+  {text:"A sickness has spread through a port city. Ships carry it to other towns. More people fall ill each day. Healers are dying too.",choices:[
+    {text:"Cure every sick person in every city the plague has reached.",faith:15,favor:5,wrath:-5,tag:"apollo"},
+    {text:"Stop all ships from leaving the port. Contain it, even if it means trapping people inside.",faith:5,favor:2,wrath:8,tag:"hera"},
+    {text:"Let the plague run its course. Populations correct themselves, and the strong will remain.",faith:-10,favor:0,wrath:15,tag:"ares"},
+    {text:"Cure only the healers so they can treat the rest. Let mortals solve the crisis with divine knowledge.",faith:9,favor:3,wrath:2,tag:"athena"}
+  ]},
+  {text:"A father stole grain from a storehouse to feed his five children. The storehouse owner demands you punish him publicly.",choices:[
+    {text:"Side fully with the storehouse owner. Laws must hold even when the circumstances are painful.",faith:-4,favor:0,wrath:11,tag:"zeus"},
+    {text:"Punish the father lightly as a visible symbol but return the food to his family quietly afterward.",faith:5,favor:2,wrath:5,tag:"apollo"},
+    {text:"Provide food for the family and repay the storehouse owner generously from your divine abundance.",faith:15,favor:5,wrath:-5,tag:"demeter"},
+    {text:"Forgive the father in public and have him work off the debt through honest labor over time.",faith:10,favor:3,wrath:0,tag:"hera"}
+  ]},
+  {text:"A king has ruled for thirty years through fear. His people are exhausted. He has broken no laws, but the suffering under him is real.",choices:[
+    {text:"Send him a creeping illness that drains him slowly until he chooses to step down on his own.",faith:4,favor:1,wrath:9,tag:"zeus"},
+    {text:"Remove him from power and guide the people toward choosing a kinder ruler themselves.",faith:15,favor:5,wrath:-5,tag:"hera"},
+    {text:"Do nothing. He has broken no law and removing legal rulers sets a dangerous precedent.",faith:2,favor:0,wrath:3,tag:"apollo"},
+    {text:"Appear to the people directly and confirm they have the right to remove him. Let them act.",faith:10,favor:4,wrath:4,tag:"athena"}
+  ]},
+  {text:"A wildfire is moving toward a town. It started from a farmer's cooking fire. Wind is spreading it fast. Children cannot run fast enough.",choices:[
+    {text:"Warn the townspeople to run now but let the fire burn. Structures can be rebuilt.",faith:3,favor:1,wrath:6,tag:"hera"},
+    {text:"Create a firebreak by burning a controlled strip of land ahead of the blaze. Sacrifice some to save most.",faith:5,favor:2,wrath:8,tag:"ares"},
+    {text:"Shift the wind so the fire turns away from the town and burns itself out in open land.",faith:10,favor:3,wrath:0,tag:"zeus"},
+    {text:"Call down heavy rain over the entire area and stop the fire completely.",faith:15,favor:5,wrath:-5,tag:"demeter"}
+  ]}
+];
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+var state={faith:0,favor:0,wrath:0,currentScenarioIndex:0,
+  personalityCounts:{athena:0,hera:0,zeus:0,demeter:0,ares:0,apollo:0},
+  domain:null,abilityUsed:false,valorNextDouble:false};
+var playerName='';
+var selectedDomainKey=null;
+var wrathAlertTimer=null;
+
+// ═══════════════════════════════════════
+// NAME INPUT
+// ═══════════════════════════════════════
+function onNameInput(){
+  var v=document.getElementById('name-input').value.trim();
+  document.getElementById('name-confirm-btn').disabled=v.length<1;
+}
+function onNameKey(e){if(e.key==='Enter'){var v=document.getElementById('name-input').value.trim();if(v)confirmName();}}
+function confirmName(){
+  var v=document.getElementById('name-input').value.trim();
+  if(!v)return;
+  playerName=v;
+  showScreen('screen-domain');
+}
+
+// ═══════════════════════════════════════
+// DOMAIN SELECTION
+// ═══════════════════════════════════════
+function selectDomain(card){
+  document.querySelectorAll('.domain-card').forEach(function(c){c.classList.remove('selected');});
+  card.classList.add('selected');
+  selectedDomainKey=card.getAttribute('data-domain');
+  var lbl=document.getElementById('domain-selected-label');
+  lbl.textContent=domains[selectedDomainKey].name+' selected';
+  lbl.classList.add('show');
+  document.getElementById('domain-confirm-btn').disabled=false;
+}
+function confirmDomain(){
+  if(!selectedDomainKey)return;
+  state.domain=domains[selectedDomainKey];
+  state.faith=state.domain.startFaith;
+  state.favor=state.domain.startFavor;
+  state.wrath=state.domain.startWrath;
+  state.currentScenarioIndex=0;
+  state.personalityCounts={athena:0,hera:0,zeus:0,demeter:0,ares:0,apollo:0};
+  state.abilityUsed=false;state.valorNextDouble=false;
+  document.getElementById('topbar-domain').textContent=state.domain.name;
+  document.getElementById('ability-name').textContent=state.domain.abilityName;
+  document.getElementById('ability-desc').textContent=state.domain.abilityDesc;
+  var ab=document.getElementById('ability-btn');ab.disabled=false;ab.style.opacity='1';
+  ['faith','favor','wrath'].forEach(function(s){document.getElementById('val-'+s).textContent=state[s];});
+  updateBars();
+  renderScenario();
+  showScreen('screen-game');
+}
+
+// ═══════════════════════════════════════
+// ABILITY
+// ═══════════════════════════════════════
+function useAbility(){
+  if(state.abilityUsed)return;
+  state.abilityUsed=true;
+  var ab=document.getElementById('ability-btn');ab.disabled=true;ab.style.opacity='0.3';
+  var fl=document.getElementById('ability-flash');fl.classList.add('show');setTimeout(function(){fl.classList.remove('show');},300);
+  var t=state.domain.abilityType;
+  if(t==='oracle'){
+    var sc=scenarios[state.currentScenarioIndex];
+    var minW=Infinity,minIdx=0;
+    sc.choices.forEach(function(c,i){if(c.wrath<minW){minW=c.wrath;minIdx=i;}});
+    var btns=document.querySelectorAll('.choice-btn');
+    if(btns[minIdx])btns[minIdx].classList.add('reveal-low');
+  }else if(t==='valor'){state.valorNextDouble=true;
+  }else if(t==='purge'){var pw=state.wrath;state.wrath=Math.max(0,state.wrath-25);updateStats(state.faith,state.favor,pw);
+  }else if(t==='swap'){var pv=state.favor,pw2=state.wrath;state.wrath=Math.max(0,state.favor);state.favor=pw2;updateStats(state.faith,pv,pw2);}
+}
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+function clamp(v,mn,mx){return Math.max(mn,Math.min(mx,v));}
+function toRoman(n){var r=["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"];return r[n]!==undefined?r[n]:String(n+1);}
+function getDominantGod(){var c=state.personalityCounts,top="zeus",mx=-1;Object.keys(c).forEach(function(k){if(c[k]>mx){mx=c[k];top=k;}});return top;}
+function calcGodScore(){var fs=state.faith/100,fv=state.favor/50,wp=state.wrath/100;return Math.round(clamp((fs*0.5+fv*0.3-wp*0.2)*100,0,100));}
+
+function animateNumber(elId,from,to,dur){
+  var el=document.getElementById(elId);if(!el)return;
+  var start=null;
+  function step(ts){if(!start)start=ts;var p=Math.min((ts-start)/dur,1);el.textContent=Math.round(from+(to-from)*p);if(p<1)requestAnimationFrame(step);else el.textContent=to;}
+  requestAnimationFrame(step);
+}
+function updateBars(){
+  document.getElementById('fill-faith').style.width=clamp(state.faith/100,0,1)*100+'%';
+  document.getElementById('fill-favor').style.width=clamp(state.favor/50,0,1)*100+'%';
+  document.getElementById('fill-wrath').style.width=clamp(state.wrath/100,0,1)*100+'%';
+  var wf=document.getElementById('fill-wrath'),wv=document.getElementById('val-wrath');
+  if(state.wrath>60){wf.classList.add('glow');wv.classList.add('danger');}
+  else{wf.classList.remove('glow');wv.classList.remove('danger');}
+}
+function updateStats(pf,pv,pw){
+  animateNumber('val-faith',pf,state.faith,480);
+  animateNumber('val-favor',pv,state.favor,480);
+  animateNumber('val-wrath',pw,state.wrath,480);
+  updateBars();
+  function pop(id){var e=document.getElementById(id);if(!e)return;e.classList.add('pop');setTimeout(function(){e.classList.remove('pop');},230);}
+  function fls(id,cls){var e=document.getElementById(id);if(!e)return;e.classList.add(cls);setTimeout(function(){e.classList.remove(cls);},700);}
+  if(state.faith!==pf){pop('val-faith');fls('panel-faith','fl-f');}
+  if(state.favor!==pv){pop('val-favor');fls('panel-favor','fl-v');}
+  if(state.wrath!==pw){pop('val-wrath');fls('panel-wrath','fl-w');}
+}
+function checkImmediateFail(){
+  if(state.wrath>=75){setTimeout(function(){showScreen('screen-fail');},650);return true;}
+  if(state.wrath>=50)showWrathAlert();
+  return false;
+}
+function showWrathAlert(){
+  var el=document.getElementById('wrath-alert');el.classList.add('show');
+  if(wrathAlertTimer)clearTimeout(wrathAlertTimer);
+  wrathAlertTimer=setTimeout(function(){el.classList.remove('show');},3400);
+}
+
+// ═══════════════════════════════════════
+// RENDER SCENARIO
+// ═══════════════════════════════════════
+var choiceLabels=["Choice I","Choice II","Choice III","Choice IV"];
+function renderScenario(){
+  var idx=state.currentScenarioIndex;
+  var sc=scenarios[idx];
+  document.getElementById('progress-text').textContent='Scenario '+(idx+1)+' of '+scenarios.length;
+  document.getElementById('sc-tag').textContent='Scenario '+toRoman(idx);
+  document.getElementById('sc-text').textContent=sc.text;
+
+  // illustration
+  var illEl=document.getElementById('sc-illustration');
+  illEl.innerHTML=sceneIllustrations[idx]||'';
+
+  // re-animate card
+  var wrap=document.getElementById('scenario-wrap');
+  wrap.style.animation='none';void wrap.offsetWidth;wrap.style.animation='';
+
+  var cw=document.getElementById('choices-wrap');
+  cw.innerHTML='';
+  var grid=document.createElement('div');grid.className='layout-4';
+  sc.choices.forEach(function(choice,i){
+    var btn=document.createElement('button');btn.className='choice-btn';
+    btn.innerHTML='<span class="ch-label">'+(choiceLabels[i]||'Choice '+(i+1))+'</span>'+choice.text;
+    btn.addEventListener('click',function(){makeChoice(choice);});
+    grid.appendChild(btn);
+  });
+  cw.appendChild(grid);
+}
+
+// ═══════════════════════════════════════
+// MAKE CHOICE
+// ═══════════════════════════════════════
+function makeChoice(choice){
+  document.querySelectorAll('.choice-btn').forEach(function(b){b.style.pointerEvents='none';});
+  var pf=state.faith,pv=state.favor,pw=state.wrath;
+  var fg=choice.faith;
+  if(state.valorNextDouble&&fg>0){fg*=2;state.valorNextDouble=false;}
+  var wd=choice.wrath;
+  if(state.domain&&state.domain.wrathMult!==1&&wd>0)wd=Math.round(wd*state.domain.wrathMult);
+  state.faith=clamp(state.faith+fg,-999,999);
+  state.favor=clamp(state.favor+choice.favor,-999,999);
+  state.wrath=clamp(state.wrath+wd,0,999);
+  if(choice.tag&&state.personalityCounts.hasOwnProperty(choice.tag))state.personalityCounts[choice.tag]++;
+  updateStats(pf,pv,pw);
+  if(checkImmediateFail())return;
+  state.currentScenarioIndex++;
+  if(state.currentScenarioIndex>=scenarios.length)setTimeout(function(){calculateEnding();},750);
+  else setTimeout(function(){renderScenario();},520);
+}
+
+// ═══════════════════════════════════════
+// ENDING
+// ═══════════════════════════════════════
+function calculateEnding(){
+  var score=calcGodScore();
+  var godKey=getDominantGod();
+  var profile=godProfiles[godKey];
+  var won=state.faith>=80&&state.favor>=40&&state.wrath<50;
+  saveScore(playerName,score,godKey,won?'victory':'reject',state.faith,state.favor,state.wrath);
+  if(won){
+    document.getElementById('win-score').textContent=score+'%';
+    document.getElementById('end-faith').textContent=state.faith;
+    document.getElementById('end-favor').textContent=state.favor;
+    document.getElementById('end-wrath').textContent=state.wrath;
+    document.getElementById('win-god-name').textContent=profile.name;
+    document.getElementById('win-god-desc').textContent=profile.desc;
+    document.getElementById('win-portrait').innerHTML=godSVGs[godKey]||'';
+    showScreen('screen-win');
+  }else{
+    document.getElementById('reject-score').textContent=score+'%';
+    document.getElementById('reject-god-name').textContent=profile.name;
+    document.getElementById('reject-god-desc').textContent=profile.desc;
+    document.getElementById('reject-portrait').innerHTML=godSVGs[godKey]||'';
+    showScreen('screen-reject');
+  }
+}
+
+// ═══════════════════════════════════════
+// LEADERBOARD
+// ═══════════════════════════════════════
+var LB_KEY='pantheon_lb_v3';
+function loadLeaderboard(){try{var d=localStorage.getItem(LB_KEY);return d?JSON.parse(d):[];}catch(e){return[];}}
+function saveLeaderboard(d){try{localStorage.setItem(LB_KEY,JSON.stringify(d));}catch(e){}}
+function saveScore(name,score,godKey,result,faith,favor,wrath){
+  var lb=loadLeaderboard();
+  lb.push({name:name,score:score,godKey:godKey,result:result,faith:faith,favor:favor,wrath:wrath});
+  lb.sort(function(a,b){return b.score-a.score;});
+  if(lb.length>50)lb=lb.slice(0,50);
+  saveLeaderboard(lb);
+}
+function clearLeaderboard(){if(confirm('Clear the entire Hall of the Gods?')){saveLeaderboard([]);renderLeaderboard();}}
+function showLeaderboard(){renderLeaderboard();showScreen('screen-leaderboard');}
+function renderLeaderboard(){
+  var lb=loadLeaderboard();
+  var table=document.getElementById('lb-table');table.innerHTML='';
+  if(lb.length===0){table.innerHTML='<div class="lb-empty">No divine judgments recorded yet. Be the first to ascend.</div>';return;}
+  lb.forEach(function(entry,i){
+    var rank=i+1;
+    var profile=godProfiles[entry.godKey]||{name:'Unknown'};
+    var svg=godSVGs[entry.godKey]||'';
+    var rankClass=rank<=3?'rank-'+rank:'';
+    var rankStr=rank===1?'I':rank===2?'II':rank===3?'III':String(rank);
+    var badge=entry.result==='victory'?'<span style="color:var(--faith);font-size:0.62rem;font-family:Cinzel,serif;letter-spacing:0.1em;">ASCENDED</span>':'<span style="color:var(--text-dim);font-size:0.62rem;font-family:Cinzel,serif;letter-spacing:0.1em;">REJECTED</span>';
+    var row=document.createElement('div');row.className='lb-row '+rankClass;
+    row.innerHTML=
+      '<div class="lb-rank">'+rankStr+'</div>'+
+      '<div class="lb-player"><div class="lb-avatar">'+svg+'</div><div>'+
+        '<div class="lb-name">'+escHtml(entry.name)+'</div>'+
+        '<div class="lb-god">'+profile.name+' &nbsp;·&nbsp; '+badge+'</div></div></div>'+
+      '<div class="lb-stat"><div class="lb-stat-val sv-f">'+entry.faith+'</div><div class="lb-stat-lbl">Faith</div></div>'+
+      '<div class="lb-stat"><div class="lb-stat-val sv-v">'+entry.favor+'</div><div class="lb-stat-lbl">Favor</div></div>'+
+      '<div class="lb-score-big">'+entry.score+'%</div>';
+    table.appendChild(row);
+  });
+}
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  var t=document.getElementById(id);if(t)t.classList.add('active');
+  window.scrollTo(0,0);
+}
+function goToStart(){
+  document.querySelectorAll('.domain-card').forEach(function(c){c.classList.remove('selected');});
+  document.getElementById('domain-selected-label').textContent='';
+  document.getElementById('domain-selected-label').classList.remove('show');
+  document.getElementById('domain-confirm-btn').disabled=true;
+  document.getElementById('name-input').value='';
+  document.getElementById('name-confirm-btn').disabled=true;
+  selectedDomainKey=null;playerName='';
+  showScreen('screen-start');
+}
+</script>
+</body>
+</html>
